@@ -1,3 +1,5 @@
 qiskit
+pennylane
 qiskit[visualization]
 qiskit-ignis
+pennylane-qiskit
