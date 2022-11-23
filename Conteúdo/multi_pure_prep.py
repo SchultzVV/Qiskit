@@ -1,6 +1,6 @@
 import pennylane as qml
 import numpy as np
-#import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt``
 import torch
 from torch.autograd import Variable
 #from qiskit.visualization import plot_state_city
@@ -25,7 +25,7 @@ def init_state_exp_val(d):
     Paulis = gen_paulis()
 
     target_vector = [np.trace(np.real(np.dot(rrho,i))) for i in Paulis]
-    Variable(torch.tensor(target_vector ))
+    target_vector = Variable(torch.tensor(target_vector))
     return target_vector
 
 
@@ -42,6 +42,7 @@ def device_and_random_params():
 
 device, params = device_and_random_params()
 
+@qml.qnode(device, interface="torch")
 def circuit(params, M=None):
     qml.Hadamard(wires=0)
     qml.RX(params[0], wires=0)
@@ -50,12 +51,22 @@ def circuit(params, M=None):
 
     return qml.expval(qml.Hermitian(M, wires=[0]))
 
-qnode = qml.QNode(func=circuit, device=device, interface="torch")
+
+#qnode = qml.QNode(func=circuit, device=device, interface="torch")
 
 
+def infer(params,i):
+    Paulis = gen_paulis()
+    L = 0
+    print(circuit(params, Paulis[i]).item())
+    #for k in range(3):
+    #    L += torch.abs(circuit(params, Paulis[k]) - target_vector[k])
+    #return L
+infer(params,0)
+infer(params,1)
+infer(params,2)
 
-
-def cost(params, target_vector):
+def cost(params):
     Paulis = gen_paulis()
     L = 0
     for k in range(3):
@@ -65,12 +76,12 @@ def cost(params, target_vector):
 def train(epocas, params, target_vector):
 
     opt = torch.optim.Adam([params], lr=0.1)
-    best_loss = 1*cost(params, target_vector)
+    best_loss = 1*cost(params)#, target_vector)# .copy()
     best_params = 1*params
 
     for epoch in range(epocas):
         opt.zero_grad()
-        loss = cost(params, target_vector)
+        loss = cost(params)#, target_vector)
         print(epoch, loss.item())
         loss.backward()
         opt.step()
@@ -79,7 +90,7 @@ def train(epocas, params, target_vector):
             best_params = 1*params
 
     return best_params
-best_params = train(30, params, target_vector)
+#best_params = train(30, params, target_vector)
 
 
 '''
