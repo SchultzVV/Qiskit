@@ -35,7 +35,7 @@ def ginibre(d):
             G[j][k] = grn[k] + (1j)*grn[k+d]
     return G
 
-print(rdm_ginibre(3))
+#print(rdm_ginibre(3))
 '''
 def test():
     np.random.seed()
