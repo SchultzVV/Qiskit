@@ -1,56 +1,72 @@
-from qiskit.quantum_info import Statevector
-from qiskit.visualization import plot_bloch_multivector
-from sympy import conjugate
+#from sympy import conjugate
 from torch.autograd import Variable
 import torch
 from rsvg import rsvg
 from rdmg import rdm_ginibre
 import pennylane as qml
-
+import matplotlib.pyplot as plt
 import numpy as np
-#def bloch_sphere(circuit):
-#    state = Statevector(circuit)
-#    return plot_bloch_multivector(state)
 
-#def inner_product(v,w):
-#    d = len(v); ip = 0
-#    for j in range(0,d):
-#        ip += conjugate(v[j])*w[j]
-#    return ip
-
-def gen_paulis():
-    Paulis = Variable(torch.zeros([3, 2, 2], dtype=torch.complex128), requires_grad=False)
-    Paulis[0] = torch.tensor([[0, 1], [1, 0]])        
-    Paulis[2] = torch.tensor([[1, 0], [0, -1]])
-    Paulis[1] = torch.tensor([[0, -1j], [1j, 0]])
+def gen_paulis(d):
+    Paulis = Variable(torch.zeros([3*d, 2, 2], dtype=torch.complex128), requires_grad=False)
+    aux = 0
+    for i in range(0,d,3):
+        Paulis[i+aux] = torch.tensor([[0, 1], [1, 0]])        
+        Paulis[i+1+aux] = torch.tensor([[0, -1j], [1j, 0]])
+        Paulis[i+2+aux] = torch.tensor([[1, 0], [0, -1]])
+        aux += 2
     return Paulis
 
-def init_state_fidelity(d):
-    target_state = rsvg(d)
-    target_op = np.outer(target_state.conj(), target_state)
+def init_state_rsvg(n_qb):
+    d = 2**n_qb
+    target_vector = rsvg(d)
+    target_op = np.outer(target_vector.conj(), target_vector)
     target_op = torch.tensor(target_op)
+    return target_vector, target_op
+
+def init_state_rdm_ginibre(n_qb):
+    d = 2**n_qb
+    rho = rdm_ginibre(d)
+    print(np.trace(np.dot(rho,rho)))
+    target_op = torch.tensor(rho)
     return target_op
 
 def init_state_exp_val(d):
-    rrho = rdm_ginibre(2)
-    Paulis = gen_paulis()
+    rrho = rdm_ginibre(4)
+    Paulis = gen_paulis(d)
     target_vector = [np.trace(np.real(np.dot(rrho,i))) for i in Paulis]
-    Variable(torch.tensor(target_vector ))
+    target_vector = Variable(torch.tensor(target_vector ))
     return target_vector
 
+def get_device(n_qubit):
+    device = qml.device('qiskit.aer', wires=n_qubit, backend='qasm_simulator')
+    return device
 
-def device_and_random_params():
-    device = qml.device('qiskit.aer', wires=3, backend='qasm_simulator')
-    params = np.random.normal(0,np.pi/2, 3)
+def random_params(n):
+    params = np.random.normal(0,np.pi/2, n)
     params = Variable(torch.tensor(params), requires_grad=True)
-    return device, params
+    return params
 
-device, params = device_and_random_params()
-def circuit(n_qubits, params, M=None):
-    for i in range(n_qubits):
-        qml.Hadamard(wires=i)
-        qml.RX(params[0], wires=i)
-        qml.RY(params[1], wires=i)
-        qml.RZ(params[2], wires=i)
-    return qml.expval(qml.Hermitian(M, wires=[0]))
-print(qml.draw(circuit)(params))
+def fidelidade(circuit, params, target_op):
+    return circuit(params, M=target_op).item()
+
+def cost(circuit, params, alpha):
+    L = (1-(circuit(params, M=alpha)))**2
+    return L
+
+def train(epocas, circuit, params, alpha):
+    opt = torch.optim.Adam([params], lr=0.1)
+    best_loss = 1*cost(circuit, params, alpha)
+    best_params = 1*params
+    f=[]
+    for epoch in range(epocas):
+        opt.zero_grad()
+        loss = cost(circuit, params, alpha)
+        print(epoch, loss.item())
+        loss.backward()
+        opt.step()
+        if loss < best_loss:
+            best_loss = 1*loss
+            best_params = 1*params
+        f.append(fidelidade(circuit, best_params, alpha))
+    return best_params, f
