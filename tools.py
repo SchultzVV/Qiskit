@@ -95,6 +95,41 @@ def train2(epocas, circuit, params, alpha):
         if loss < best_loss:
             best_loss = 1*loss
             best_params = 1*params
+        
         f.append(fidelidade(circuit, best_params, alpha))
     print(epoch, loss.item())
     return best_params, f
+
+def vqa(n_qubits):
+    #n_qubits = 1
+    depht = n_qubits+1
+    n = 3*n_qubits*(1+depht)
+    params = random_params(n)
+    device = get_device(n_qubits)
+    @qml.qnode(device, interface="torch")
+    def circuit(params, M=None):
+        w = []
+        aux = 0
+        for j in range(n_qubits):
+            qml.RX(params[j+aux], wires=j)
+            qml.RY(params[j+1+aux], wires=j)
+            qml.RZ(params[j+2+aux], wires=j)
+            w.append(j)
+            aux+=2
+        if n_qubits == 1:
+            for z in range(1,depht):
+                qml.RX(params[j+aux], wires=j)
+                qml.RY(params[j+1+aux], wires=j)
+                qml.RZ(params[j+2+aux], wires=j)
+                aux+=2
+            return qml.expval(qml.Hermitian(M, wires=w))
+        for z in range(depht):
+            for i in range(n_qubits-1):
+                qml.CNOT(wires=[i,i+1])
+            for j in range(n_qubits):
+                qml.RX(params[j+aux], wires=j)
+                qml.RY(params[j+1+aux], wires=j)
+                qml.RZ(params[j+2+aux], wires=j)
+                aux+=2
+        return qml.expval(qml.Hermitian(M, wires=w))
+    return circuit, params
