@@ -50,8 +50,8 @@ def random_params(n):
 def fidelidade(circuit, params, target_op):
     return circuit(params, M=target_op).item()
 
-def cost(circuit, params, alpha):
-    L = (1-(circuit(params, M=alpha)))**2
+def cost(circuit, params, target_op):
+    L = (1-(circuit(params, M=target_op)))**2
     return L
 
 def calc_mean(x_list):
@@ -63,32 +63,32 @@ def variancia(x_list, x1):
     var = (abs(x_med)-abs(x1))**2
     return var, x_med
 
-def train(epocas, circuit, params, alpha):
+def train(epocas, circuit, params, target_op):
     opt = torch.optim.Adam([params], lr=0.1)
-    best_loss = 1*cost(circuit, params, alpha)
+    best_loss = 1*cost(circuit, params, target_op)
     best_params = 1*params
     f=[]
     for epoch in range(epocas):
         opt.zero_grad()
-        loss = cost(circuit, params, alpha)
+        loss = cost(circuit, params, target_op)
         #print(epoch, loss.item())
         loss.backward()
         opt.step()
         if loss < best_loss:
             best_loss = 1*loss
             best_params = 1*params
-        f.append(fidelidade(circuit, best_params, alpha))
+        f.append(fidelidade(circuit, best_params, target_op))
     print(epoch, loss.item())
     return best_params, f
 
-def train2(epocas, circuit, params, alpha):
+def train2(epocas, circuit, params, target_op):
     opt = torch.optim.Adam([params], lr=0.1)
-    best_loss = 1*cost(circuit, params, alpha)
+    best_loss = 1*cost(circuit, params, target_op)
     best_params = 1*params
     f=[]
     for epoch in range(epocas):
         opt.zero_grad()
-        loss = cost(circuit, params, alpha)
+        loss = cost(circuit, params, target_op)
         #print(epoch, loss.item())
         loss.backward()
         opt.step()
@@ -96,7 +96,7 @@ def train2(epocas, circuit, params, alpha):
             best_loss = 1*loss
             best_params = 1*params
         
-        f.append(fidelidade(circuit, best_params, alpha))
+        f.append(fidelidade(circuit, best_params, target_op))
     print(epoch, loss.item())
     return best_params, f
 
