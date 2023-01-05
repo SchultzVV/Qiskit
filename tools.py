@@ -105,7 +105,7 @@ def train(epocas, circuit, params, target_op):
     for epoch in range(epocas):
         opt.zero_grad()
         loss = cost(circuit, params, target_op)
-        #print(epoch, loss.item())
+        print(epoch, loss.item())
         loss.backward()
         opt.step()
         if loss < best_loss:
@@ -168,6 +168,77 @@ def vqa(n_qubits):
         return qml.expval(qml.Hermitian(M, wires=w))
     return circuit, params
 
+def vqa_extra_cnot(n_qubits):
+    #n_qubits = 1
+    depht = n_qubits+1
+    n = 3*n_qubits*(1+depht)
+    params = random_params(n)
+    device = get_device(n_qubits)
+    @qml.qnode(device, interface="torch")
+    def circuit(params, M=None):
+        qml.CNOT(wires=[0,1])
+        aux = 0
+        w = []
+        for j in range(n_qubits):
+            qml.RX(params[j+aux], wires=j)
+            qml.RY(params[j+1+aux], wires=j)
+            qml.RZ(params[j+2+aux], wires=j)
+            aux+=2
+            w.append(j)
+        qml.CNOT(wires=[0,2])
+        qml.CNOT(wires=[1,3])
+        for j in range(n_qubits):
+            qml.RX(params[j+aux], wires=j)
+            qml.RY(params[j+1+aux], wires=j)
+            qml.RZ(params[j+2+aux], wires=j)
+            aux+=2
+        qml.CNOT(wires=[1,0])
+        qml.CNOT(wires=[2,3])
+        for j in range(n_qubits):
+            qml.RX(params[j+aux], wires=j)
+            qml.RY(params[j+1+aux], wires=j)
+            qml.RZ(params[j+2+aux], wires=j)
+            aux+=2
+        qml.CNOT(wires=[0,1])
+        qml.CNOT(wires=[2,3])
+        for j in range(n_qubits):
+            qml.RX(params[j+aux], wires=j)
+            qml.RY(params[j+1+aux], wires=j)
+            qml.RZ(params[j+2+aux], wires=j)
+            aux+=2
+        qml.CNOT(wires=[1,0])
+        qml.CNOT(wires=[2,3])
+        #    w.append(j)
+        #for j in range(n_qubits):
+        #    qml.RX(params[j+aux], wires=j)
+        #    qml.RY(params[j+1+aux], wires=j)
+        #    qml.RZ(params[j+2+aux], wires=j)
+        #    w.append(j)
+        #    aux+=2
+        #if n_qubits == 1:
+        #    for z in range(1,depht):
+        #        qml.RX(params[j+aux], wires=j)
+        #        qml.RY(params[j+1+aux], wires=j)
+        #        qml.RZ(params[j+2+aux], wires=j)
+        #        aux+=2
+        #    return qml.expval(qml.Hermitian(M, wires=w))
+        #for z in range(depht):
+        #    for i in range(n_qubits-1):
+        #        qml.CNOT(wires=[i,i+1])
+        #    for j in range(n_qubits):
+        #        qml.RX(params[j+aux], wires=j)
+        #        qml.RY(params[j+1+aux], wires=j)
+        #        qml.RZ(params[j+2+aux], wires=j)
+        #        aux+=2
+        return qml.expval(qml.Hermitian(M, wires=w))
+    return circuit, params
+n_qubits = 4
+fidelidades = []
+
+circuit, params = vqa_extra_cnot(n_qubits)
+target_vector, target_op = init_state_rsvg(n_qubits)
+fig, ax = qml.draw_mpl(circuit, decimals=1)(params, target_op)
+plt.show()
 # 
 # class VQA(object):
 #     def __init__(self, *args, **kwargs):
