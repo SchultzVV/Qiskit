@@ -1,5 +1,5 @@
 qiskit
-pennylane
+PennyLane
 qiskit[visualization]
 qiskit-ignis
 pennylane-qiskit

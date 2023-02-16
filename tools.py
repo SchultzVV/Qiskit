@@ -6,6 +6,7 @@ from rdmg import rdm_ginibre
 import pennylane as qml
 import matplotlib.pyplot as plt
 import numpy as np
+import cmath
 
 #class TestApp(unittest.TestCase):
 #    def __init__(self, *args, **kwargs):
@@ -19,6 +20,20 @@ import numpy as np
 #            self.base, 'S.PAULO')
 #        self.mapa_cluster = populate_maps(self.base_vitima, self.base_autor)
 
+def bpf(theta, phi, p):
+    state = np.zeros(4,dtype=complex)
+    state[0] = np.sqrt(1-p)*np.cos(theta/2)
+    state[1] = cmath.exp(1j*phi)*np.sin(theta/2)
+    state[2] = 1j*np.sqrt(p)*(-1)*cmath.exp(1j*phi)*np.sin(theta/2)
+    state[3] = 1j*np.sqrt(p)*np.cos(theta/2)
+    return state
+
+def init_state_bpf(n_qb, p):
+    d = 2**n_qb
+    target_vector = bpf(np.pi/4, 0, p)
+    target_op = np.outer(target_vector.conj(), target_vector)
+    target_op = torch.tensor(target_op)
+    return target_vector, target_op
 
 def gen_paulis(d):
     Paulis = Variable(torch.zeros([3*d, 2, 2], dtype=torch.complex128), requires_grad=False)
