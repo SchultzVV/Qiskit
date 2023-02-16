@@ -339,14 +339,15 @@ def vqa_bpf(n_qubits, depht=None):
         w = [0,1]
 
         for j in range(0,24,6):
-            #print(j)
+            print(j)
             qml.RX(params[j], wires=0)
             qml.RY(params[j+1], wires=0)
             qml.RZ(params[j+2], wires=0)
             qml.RX(params[j+3], wires=1)
             qml.RY(params[j+4], wires=1)
             qml.RZ(params[j+5], wires=1)
-            qml.CNOT(wires=[0, 1])
+            if j <18:
+                qml.CNOT(wires=[0, 1])
         return qml.expval(qml.Hermitian(M, wires=w))
     return circuit, params
 
