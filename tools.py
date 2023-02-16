@@ -327,6 +327,29 @@ def vqa_extra_cnot_depth5(n_qubits):
         return qml.expval(qml.Hermitian(M, wires=w))
     return circuit, params
 
+def vqa_bpf(n_qubits, depht=None):
+    #n_qubits = 1
+    if depht == None:
+        depht = n_qubits+1
+    n = 3*n_qubits*(1+depht)
+    params = random_params(n)
+    device = get_device(n_qubits)
+    @qml.qnode(device, interface="torch")
+    def circuit(params, M=None):
+        w = [0,1]
+
+        for j in range(0,24,6):
+            #print(j)
+            qml.RX(params[j], wires=0)
+            qml.RY(params[j+1], wires=0)
+            qml.RZ(params[j+2], wires=0)
+            qml.RX(params[j+3], wires=1)
+            qml.RY(params[j+4], wires=1)
+            qml.RZ(params[j+5], wires=1)
+            qml.CNOT(wires=[0, 1])
+        return qml.expval(qml.Hermitian(M, wires=w))
+    return circuit, params
+
 #n_qubits = 4
 #fidelidades = []
 #
