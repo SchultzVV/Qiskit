@@ -30,7 +30,7 @@ def bpf(theta, phi, p):
 
 def init_state_bpf(n_qb, p):
     d = 2**n_qb
-    target_vector = bpf(np.pi/4, 0, p)
+    target_vector = bpf(np.pi/2, 0, p)
     target_op = np.outer(target_vector.conj(), target_vector)
     target_op = torch.tensor(target_op)
     return target_vector, target_op
