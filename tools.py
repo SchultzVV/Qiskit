@@ -19,6 +19,19 @@ import cmath
 #        self.base_vitima, self.base_autor = split_dataset_by_city(
 #            self.base, 'S.PAULO')
 #        self.mapa_cluster = populate_maps(self.base_vitima, self.base_autor)
+def general_state(theta, phi):
+    state = np.zeros(2,dtype=complex)
+    state[0] = np.cos(theta/2)
+    state[1] = cmath.exp(1j*phi)*np.sin(theta/2)
+    return state
+#print(general_state(np.pi/2,0))
+
+def init_state_gen_state(n_qb, p):
+    d = 2**n_qb
+    target_vector = general_state(np.pi/2, 0)
+    target_op = np.outer(target_vector.conj(), target_vector)
+    target_op = torch.tensor(target_op)
+    return target_vector, target_op
 
 def bpf(theta, phi, p):
     state = np.zeros(4,dtype=complex)
