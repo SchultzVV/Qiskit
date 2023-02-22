@@ -364,6 +364,27 @@ def vqa_bpf(n_qubits, depht=None):
         return qml.expval(qml.Hermitian(M, wires=w))
     return circuit, params
 
+
+def vqa_gen_state(n_qubits, depht=None):
+    #n_qubits = 1
+    if depht == None:
+        depht = n_qubits+1
+    n = 3*n_qubits*(1+depht)
+    params = random_params(n)
+    device = qml.device('qiskit.aer', wires=n_qubits, backend='qasm_simulator')
+    @qml.qnode(device, interface="torch")
+    def circuit(params, M=None):
+        #print(j)
+        aux = 0
+        for deep in range(0,depht):
+
+            qml.RX(params[0+aux], wires=0)
+            qml.RY(params[1+aux], wires=0)
+            qml.RZ(params[2+aux], wires=0)
+            aux += 3
+        return qml.expval(qml.Hermitian(M, wires=0))
+    return circuit, params
+
 #n_qubits = 4
 #fidelidades = []
 #
